@@ -6,32 +6,32 @@ const SHOP_ITEMS = [
     id: 'potion',
     name: 'Poção Moyai',
     price: 15,
-    icon: 'potion.png',
+    icon: 'img/potion.png',
     desc: 'Deixa seu gatinho cheiroso e rosinha por alguns segundos.'
   }
 ];
 
 // ---------- Roupinhas ----------
 // Roupas compradas ficam guardadas em state.outfits (id -> true).
-// A "Roupa Original" é sempre grátis e representa o gato sem roupa nenhuma.
+// A "Roupa Amarela" é sempre grátis e representa o gato sem roupa nenhuma (skin original).
 const OUTFIT_ITEMS = [
   {
-    id: 'roupa-giy',
-    name: 'Roupa Giy',
+    id: 'rosa',
+    name: 'Roupa Rosa',
     price: 400,
-    icon: 'roupa-giy.png',                  // ícone da roupa (mercado/itens)
-    catSprite: 'cat-roupa-giy.png',          // gato acordado usando a roupa
-    sleepScene: 'cat-sleep-scene-giy.jpg',   // gato dormindo usando a roupa
-    desc: 'Um casaquinho fofo pro seu gatinho.'
+    icon: 'img/Rouparose.png',                   // ícone da roupa (mercado/itens)
+    catSprite: 'img/roupa-giy.png',              // gato acordado usando a roupa rosa
+    sleepScene: 'img/cat-sleep-scene-giy.jpg',   // gato dormindo usando a roupa rosa
+    desc: 'Um casaquinho rosa fofo pro seu gatinho.'
   }
 ];
 
 const ORIGINAL_OUTFIT = {
   id: null,
-  name: 'Roupa Original',
-  icon: 'cat.png',
-  catSprite: 'cat.png',
-  sleepScene: 'cat-sleep-scene.jpg',
+  name: 'Roupa Amarela',
+  icon: 'img/cat-roupa-giy.png',
+  catSprite: 'img/cat.png',
+  sleepScene: 'img/cat-sleep-scene.jpg',
   desc: 'O jeitinho natural do seu gatinho, sem roupa nenhuma.'
 };
 

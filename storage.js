@@ -55,6 +55,16 @@ const Storage = {
     state.outfits = state.outfits || {};
     state.equippedOutfit = state.equippedOutfit || null;
 
+    // Migração: saves antigos guardavam a roupa rosa com o id 'roupa-giy'.
+    // Continua reconhecendo quem já tinha comprado, agora com o id novo 'rosa'.
+    if(state.outfits['roupa-giy'] && !state.outfits['rosa']){
+      state.outfits['rosa'] = true;
+      delete state.outfits['roupa-giy'];
+    }
+    if(state.equippedOutfit === 'roupa-giy'){
+      state.equippedOutfit = 'rosa';
+    }
+
     return state;
   },
 

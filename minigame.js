@@ -26,9 +26,9 @@ const Minigame = {
     this.canvas = document.getElementById('mg-canvas');
     this.ctx = this.canvas.getContext('2d');
     this.foodImg = new Image();
-    this.foodImg.src = 'food.png';
+    this.foodImg.src = 'img/food.png';
     this.fishImg = new Image();
-    this.fishImg.src = 'fish.png';
+    this.fishImg.src = 'img/fish.png';
 
     this.canvas.addEventListener('pointerdown', (e) => this._handleTap(e));
     window.addEventListener('resize', () => this._resizeCanvas());
@@ -76,6 +76,24 @@ const Minigame = {
     document.getElementById('mg-lives').textContent = '❤️'.repeat(Math.max(0, this.lives)) + '🖤'.repeat(3 - Math.max(0, this.lives));
   },
 
+  // Calcula as dimensões/posição reais do peixe desenhado, usadas tanto
+  // pra desenhar quanto pra detectar o clique (assim os dois nunca ficam
+  // fora de sincronia de novo).
+  _fishBox(it){
+    const img = this.fishImg;
+    let w, h;
+    if(img && img.complete && img.naturalWidth){
+      w = it.r * 1.8;
+      h = w * (img.naturalHeight / img.naturalWidth);
+    }else{
+      // Proporção aproximada da arte do peixe (alta e fina) como reserva
+      w = it.r * 1.8;
+      h = w * 3.25;
+    }
+    const offsetY = -h * 0.32;
+    return { w, h, offsetY };
+  },
+
   _handleTap(e){
     if(!this.running) return;
     const rect = this.canvas.getBoundingClientRect();
@@ -84,11 +102,27 @@ const Minigame = {
 
     for(let i = this.items.length - 1; i >= 0; i--){
       const it = this.items[i];
-      const dx = x - it.x;
-      const dy = y - it.y;
-      if(Math.sqrt(dx * dx + dy * dy) < it.r + 10){
-        this._catchItem(i);
-        return;
+
+      if(it.type === 'fish'){
+        // Peixe: caixa retangular alinhada com o desenho real (imagem alta e fina),
+        // com uma margem de folga pra facilitar o toque.
+        const { w, h, offsetY } = this._fishBox(it);
+        const pad = 12;
+        const left = it.x - w / 2 - pad;
+        const right = it.x + w / 2 + pad;
+        const top = it.y + offsetY - pad;
+        const bottom = it.y + offsetY + h + pad;
+        if(x >= left && x <= right && y >= top && y <= bottom){
+          this._catchItem(i);
+          return;
+        }
+      }else{
+        const dx = x - it.x;
+        const dy = y - it.y;
+        if(Math.sqrt(dx * dx + dy * dy) < it.r + 10){
+          this._catchItem(i);
+          return;
+        }
       }
     }
   },
@@ -216,10 +250,9 @@ const Minigame = {
       ctx.rotate(it.type === 'fish' ? 0 : it.rot);
       if(it.type === 'fish'){
         const img = this.fishImg;
+        const { w, h, offsetY } = this._fishBox(it);
         if(img.complete && img.naturalWidth){
-          const w = it.r * 1.8;
-          const h = w * (img.naturalHeight / img.naturalWidth);
-          ctx.drawImage(img, -w / 2, -h * 0.32, w, h);
+          ctx.drawImage(img, -w / 2, offsetY, w, h);
         }else{
           ctx.fillStyle = '#7EC8E3';
           ctx.beginPath();

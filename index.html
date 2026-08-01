@@ -4,8 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gatinho Faminto 🐱</title>
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="animations.css">
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
@@ -18,7 +17,7 @@
 <!-- ===================== TELA: NOME DO GATO ===================== -->
 <section id="screen-name" class="screen active">
   <div class="card name-card">
-    <img class="name-cat" src="cat.png" alt="Gatinho">
+    <img class="name-cat" src="img/cat.png" alt="Gatinho">
     <h1>Que gatinho fofo!</h1>
     <p>Como você quer chamá-lo?</p>
     <input id="input-name" type="text" maxlength="16" placeholder="Digite um nome...">
@@ -45,12 +44,12 @@
     <div id="mood-bubble" class="mood-bubble">😺</div>
 
     <div id="cat-wrapper" class="cat-wrapper">
-      <img id="cat-sprite" src="cat.png" alt="Gatinho" class="cat-sprite idle">
+      <img id="cat-sprite" src="img/cat.png" alt="Gatinho" class="cat-sprite idle">
       <div id="cat-shadow" class="cat-shadow"></div>
     </div>
 
     <div id="sleep-card" class="sleep-card">
-      <img id="sleep-scene-img" src="cat-sleep-scene.jpg" alt="Gatinho dormindo" class="sleep-img">
+      <img id="sleep-scene-img" src="img/cat-sleep-scene.jpg" alt="Gatinho dormindo" class="sleep-img">
       <span class="zzz z1">Z</span>
       <span class="zzz z2">Z</span>
       <span class="zzz z3">z</span>
@@ -85,7 +84,7 @@
 
   <!-- ---------- Mochila (botão flutuante) ---------- -->
   <button id="btn-backpack" class="backpack-btn" title="Mochila">
-    <img src="backpack.png" alt="Mochila">
+    <img src="img/backpack.png" alt="Mochila">
     <span id="potion-badge" class="item-badge" hidden>0</span>
   </button>
 </section>
@@ -142,12 +141,12 @@
 
 <div id="toast" class="toast"></div>
 
-<script src="utils.js"></script>
-<script src="storage.js"></script>
-<script src="sound.js"></script>
-<script src="cat.js"></script>
-<script src="minigame.js"></script>
-<script src="shop.js"></script>
-<script src="main.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/cat.js"></script>
+<script src="js/minigame.js"></script>
+<script src="js/shop.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>
