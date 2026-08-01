@@ -26,9 +26,9 @@ const Minigame = {
     this.canvas = document.getElementById('mg-canvas');
     this.ctx = this.canvas.getContext('2d');
     this.foodImg = new Image();
-    this.foodImg.src = 'assets/food.png';
+    this.foodImg.src = 'food.png';
     this.fishImg = new Image();
-    this.fishImg.src = 'assets/fish.png';
+    this.fishImg.src = 'fish.png';
 
     this.canvas.addEventListener('pointerdown', (e) => this._handleTap(e));
     window.addEventListener('resize', () => this._resizeCanvas());

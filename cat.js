@@ -20,6 +20,7 @@ const Cat = {
     this.els.petBtn = document.getElementById('btn-pet');
     this.els.sleepBtn = document.getElementById('btn-sleep');
     this.els.sleepCard = document.getElementById('sleep-card');
+    this.els.sleepImg = document.getElementById('sleep-scene-img');
   },
 
   moodFor(hunger, happy){
@@ -39,6 +40,19 @@ const Cat = {
 
     this.els.hungerBarBg.classList.toggle('critical', state.hunger < 20);
     this.els.feedBtn.classList.toggle('attention', state.hunger < 35 && !state.sleeping);
+
+    // ---- Roupa: troca o sprite acordado/dormindo conforme a roupa vestida ----
+    const outfit = (typeof Shop !== 'undefined') ? Shop.getOutfit(state.equippedOutfit) : null;
+    if(outfit){
+      if(this.els.sprite.dataset.outfit !== outfit.id){
+        this.els.sprite.src = outfit.catSprite;
+        this.els.sprite.dataset.outfit = outfit.id || '';
+      }
+      if(this.els.sleepImg && this.els.sleepImg.dataset.outfit !== outfit.id){
+        this.els.sleepImg.src = outfit.sleepScene;
+        this.els.sleepImg.dataset.outfit = outfit.id || '';
+      }
+    }
 
     // ---- Dormindo: troca a cena inteira do gato ----
     const sleeping = !!state.sleeping;

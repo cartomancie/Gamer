@@ -6,10 +6,34 @@ const SHOP_ITEMS = [
     id: 'potion',
     name: 'Poção Moyai',
     price: 15,
-    icon: 'assets/potion.png',
+    icon: 'potion.png',
     desc: 'Deixa seu gatinho cheiroso e rosinha por alguns segundos.'
   }
 ];
+
+// ---------- Roupinhas ----------
+// Roupas compradas ficam guardadas em state.outfits (id -> true).
+// A "Roupa Original" é sempre grátis e representa o gato sem roupa nenhuma.
+const OUTFIT_ITEMS = [
+  {
+    id: 'roupa-giy',
+    name: 'Roupa Giy',
+    price: 400,
+    icon: 'roupa-giy.png',                  // ícone da roupa (mercado/itens)
+    catSprite: 'cat-roupa-giy.png',          // gato acordado usando a roupa
+    sleepScene: 'cat-sleep-scene-giy.jpg',   // gato dormindo usando a roupa
+    desc: 'Um casaquinho fofo pro seu gatinho.'
+  }
+];
+
+const ORIGINAL_OUTFIT = {
+  id: null,
+  name: 'Roupa Original',
+  icon: 'cat.png',
+  catSprite: 'cat.png',
+  sleepScene: 'cat-sleep-scene.jpg',
+  desc: 'O jeitinho natural do seu gatinho, sem roupa nenhuma.'
+};
 
 const Shop = {
   els: {},
@@ -83,6 +107,7 @@ const Shop = {
   _renderMarket(){
     const state = this.getState();
     this.els.panelMarket.innerHTML = '';
+
     SHOP_ITEMS.forEach(item => {
       const canAfford = state.coins >= item.price;
       const card = document.createElement('div');
@@ -98,6 +123,23 @@ const Shop = {
       card.querySelector('.btn-buy').addEventListener('click', () => this.buy(item.id));
       this.els.panelMarket.appendChild(card);
     });
+
+    // Roupas ainda não compradas aparecem no Mercado
+    OUTFIT_ITEMS.filter(o => !state.outfits[o.id]).forEach(outfit => {
+      const canAfford = state.coins >= outfit.price;
+      const card = document.createElement('div');
+      card.className = 'shop-item';
+      card.innerHTML = `
+        <img class="shop-item-img" src="${outfit.icon}" alt="${outfit.name}">
+        <div class="shop-item-info">
+          <b>${outfit.name}</b>
+          <p>${outfit.desc}</p>
+        </div>
+        <button class="btn btn-primary btn-buy" ${canAfford ? '' : 'disabled'}>${outfit.price} 🪙</button>
+      `;
+      card.querySelector('.btn-buy').addEventListener('click', () => this.buyOutfit(outfit.id));
+      this.els.panelMarket.appendChild(card);
+    });
   },
 
   _renderItems(){
@@ -106,7 +148,11 @@ const Shop = {
     this.els.panelItems.appendChild(this.els.itemsEmpty);
 
     const owned = SHOP_ITEMS.filter(item => (state.inventory[item.id] || 0) > 0);
-    this.els.itemsEmpty.style.display = owned.length ? 'none' : 'block';
+    // Roupas: original é sempre "possuída" (grátis), + roupas já compradas
+    const ownedOutfits = [ORIGINAL_OUTFIT, ...OUTFIT_ITEMS.filter(o => state.outfits[o.id])];
+
+    // sempre há pelo menos a Roupa Original, então a mochila nunca fica vazia de verdade
+    this.els.itemsEmpty.style.display = 'none';
 
     owned.forEach(item => {
       const count = state.inventory[item.id] || 0;
@@ -119,6 +165,21 @@ const Shop = {
       `;
       const img = card.querySelector('.inv-item-img');
       card.querySelector('.btn-give').addEventListener('click', () => this.giveToCat(item.id, img));
+      this.els.panelItems.appendChild(card);
+    });
+
+    ownedOutfits.forEach(outfit => {
+      const isEquipped = (state.equippedOutfit || null) === outfit.id;
+      const card = document.createElement('div');
+      card.className = 'inv-item';
+      card.innerHTML = `
+        <img class="inv-item-img" src="${outfit.icon}" alt="${outfit.name}">
+        <div class="inv-item-info"><b>${outfit.name}</b><span>${outfit.id ? '' : 'Grátis'}</span></div>
+        <button class="btn ${isEquipped ? 'btn-primary' : 'btn-secondary'} btn-wear" ${isEquipped ? 'disabled' : ''}>
+          ${isEquipped ? 'Vestida ✓' : 'Vestir 👕'}
+        </button>
+      `;
+      card.querySelector('.btn-wear').addEventListener('click', () => this.wearOutfit(outfit.id));
       this.els.panelItems.appendChild(card);
     });
   },
@@ -137,6 +198,41 @@ const Shop = {
     Utils.showToast(`${item.name} comprada! 🎉`);
     this.onChange();
     this.renderAll();
+  },
+
+  getOutfit(id){
+    if(!id) return ORIGINAL_OUTFIT;
+    return OUTFIT_ITEMS.find(o => o.id === id) || ORIGINAL_OUTFIT;
+  },
+
+  buyOutfit(outfitId){
+    const outfit = OUTFIT_ITEMS.find(o => o.id === outfitId);
+    const state = this.getState();
+    if(!outfit || state.outfits[outfitId] || state.coins < outfit.price){
+      Sound.sad();
+      Utils.showToast('Moedas insuficientes! Alimente seu gatinho para ganhar mais 🪙');
+      return;
+    }
+    state.coins -= outfit.price;
+    state.outfits[outfitId] = true;
+    // ao comprar, o gatinho já veste a roupa na hora
+    state.equippedOutfit = outfitId;
+    Sound.buy();
+    this.onChange();
+    this.switchTab('items');
+    this.renderAll();
+    Utils.showToast(`${outfit.name} comprada e vestida! 🎉`);
+  },
+
+  wearOutfit(outfitId){
+    const state = this.getState();
+    if(outfitId && !state.outfits[outfitId]) return; // segurança
+    state.equippedOutfit = outfitId || null;
+    Sound.click();
+    this.onChange();
+    this.renderAll();
+    const outfit = this.getOutfit(outfitId);
+    Utils.showToast(`${state.name || 'Seu gatinho'} vestiu ${outfit.name}! ✨`);
   },
 
   giveToCat(itemId, imgEl){

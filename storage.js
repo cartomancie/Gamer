@@ -17,7 +17,9 @@ const Storage = {
       lastUpdate: Date.now(),
       totalFed: 0,
       sleeping: false,
-      inventory: { potion: 0 }
+      inventory: { potion: 0 },
+      outfits: {},          // roupas já compradas, ex: { 'roupa-giy': true }
+      equippedOutfit: null  // id da roupa vestida agora (null = original)
     };
   },
 
@@ -50,6 +52,8 @@ const Storage = {
     state.sleeping = !!state.sleeping;
     state.inventory = state.inventory || { potion: 0 };
     state.inventory.potion = state.inventory.potion || 0;
+    state.outfits = state.outfits || {};
+    state.equippedOutfit = state.equippedOutfit || null;
 
     return state;
   },
