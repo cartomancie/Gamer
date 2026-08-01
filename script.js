@@ -259,11 +259,10 @@ const Cat = {
     this.els.feedBtn.classList.toggle('attention', state.hunger < 35 && !state.sleeping);
 
     // ---- Roupa: troca o sprite acordado/dormindo conforme a roupa vestida ----
-    // Sem roupa equipada, o sprite "original" é o gatinho (menino/menina) escolhido na adoção.
-    const genderSprite = state.gender === 'girl' ? 'Girl-cat.png' : 'Boy-cat.png';
+    // Sem roupa equipada, o sprite "original" é sempre o cat.png padrão.
     const outfit = (typeof Shop !== 'undefined') ? Shop.getOutfit(state.equippedOutfit) : null;
     if(outfit){
-      const spriteSrc = state.equippedOutfit ? outfit.catSprite : genderSprite;
+      const spriteSrc = state.equippedOutfit ? outfit.catSprite : 'cat.png';
       const sleepSrc = state.equippedOutfit ? outfit.sleepScene : 'cat-sleep-scene.jpg';
       if(this.els.sprite.getAttribute('src') !== spriteSrc){
         this.els.sprite.src = spriteSrc;
@@ -698,6 +697,13 @@ const SHOP_ITEMS = [
     price: 15,
     icon: 'potion.png',
     desc: 'Deixa seu gatinho cheiroso e rosinha por alguns segundos.'
+  },
+  {
+    id: 'pocao-fome',
+    name: 'Poção Cat',
+    price: 65,
+    icon: 'poção-cat.png',
+    desc: 'Enche a barrinha de fome do seu gatinho na hora!'
   }
 ];
 
@@ -722,6 +728,15 @@ const OUTFIT_ITEMS = [
     catSprite: 'cat-equip-may.png',          // gato acordado usando a roupa mey
     sleepScene: 'dormiu-may.png',            // gato dormindo usando a roupa mey
     desc: 'Uma roupinha mey estilosa pro seu gatinho.'
+  },
+  {
+    id: 'outono',
+    name: 'Capa de Outono',
+    price: 560,
+    icon: 'fotoo-cat.png',                   // ícone da roupa (mercado/itens)
+    catSprite: 'cat-used.png',               // gato acordado usando a capa
+    sleepScene: 'gato-ged.png',              // gato dormindo usando a capa
+    desc: 'Uma capinha fofa com capuz de raposa, cheia de folhas e bolotas.'
   }
 ];
 
@@ -959,11 +974,20 @@ const Shop = {
     setTimeout(() => {
       this.close();
       Cat.playAction('eating', 900);
-      Cat.blush(5000);
       Sound.feedComplete();
-      state.happy = Utils.clamp(state.happy + 15, 0, 100);
-      this.onChange();
-      Utils.showToast(`${state.name || 'Seu gatinho'} ficou cheiroso e rosinha! 💗`);
+
+      if(item.id === 'pocao-fome'){
+        // Poção Cat: enche a fome instantaneamente
+        state.hunger = 100;
+        this.onChange();
+        Utils.showToast(`${state.name || 'Seu gatinho'} encheu a pancinha na hora! 🍗✨`);
+      }else{
+        Cat.blush(5000);
+        state.happy = Utils.clamp(state.happy + 15, 0, 100);
+        this.onChange();
+        Utils.showToast(`${state.name || 'Seu gatinho'} ficou cheiroso e rosinha! 💗`);
+      }
+
       if(wasSleeping) Utils.showToast(`${state.name || 'Seu gatinho'} acordou! ☀️`);
     }, 650);
   },
