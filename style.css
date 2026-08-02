@@ -514,6 +514,56 @@ h1, h2{ font-family:'Fredoka', 'Baloo 2', sans-serif; margin:0 0 4px; }
   transition: transform .65s cubic-bezier(.3,.6,.35,1), opacity .65s ease;
 }
 
+/* ---------- Escolher jogo ---------- */
+.choose-game-card h2{ font-size:1.4rem; }
+.choose-game-card p{ margin:4px 0 16px; color:#8a6a3f; }
+
+.choose-game-options{
+  display:flex; gap:12px; justify-content:center;
+  margin-bottom:14px;
+}
+.choose-game-option{
+  flex:1; max-width:150px;
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  padding:14px 10px 14px;
+  background:#fffaf0;
+  border:2px solid var(--yellow-dark);
+  border-radius: var(--radius-md);
+  cursor:pointer;
+  font-family:inherit; color:var(--ink); font-weight:700; font-size:.95rem;
+  transition: transform .12s ease, border-color .12s ease, background .12s ease;
+}
+.choose-game-option img{
+  width:100%; max-width:84px; aspect-ratio:1/1; object-fit:contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 6px 4px var(--shadow));
+}
+.choose-game-option:active{ transform: scale(.96); }
+.choose-game-option:hover{
+  border-color: var(--coral-dark);
+  background: #fff1ea;
+}
+
+.btn-text-cancel{
+  border:none; background:transparent; cursor:pointer;
+  color:#8a6a3f; font-weight:600; font-size:.85rem;
+  font-family:inherit; text-decoration:underline;
+  padding:6px;
+}
+
+/* ---------- Jogo do pássaro ---------- */
+#screen-birdgame{ padding:12px; }
+#bird-canvas{
+  width:100%; max-width:420px; aspect-ratio: 2/3;
+  border-radius: var(--radius-md);
+  border:3px solid #fff;
+  outline: 4px solid var(--yellow-dark);
+  outline-offset:-4px;
+  box-shadow: 0 10px 0 var(--shadow);
+  touch-action: none;
+  cursor: pointer;
+}
+
 /* ---------- Minigame ---------- */
 #screen-minigame{ padding:12px; }
 .minigame-header{

@@ -104,6 +104,39 @@
   </button>
 </section>
 
+<!-- ===================== TELA: ESCOLHER JOGO ===================== -->
+<section id="screen-choose-game" class="screen">
+  <div class="card choose-game-card">
+    <h2>Qual jogo? 🎮</h2>
+    <p>Escolha como você quer alimentar seu gatinho.</p>
+
+    <div class="choose-game-options">
+      <button type="button" id="choose-minigame" class="choose-game-option">
+        <img src="food.png" alt="Minigame de comida">
+        <span>Comidinha</span>
+      </button>
+      <button type="button" id="choose-birdgame" class="choose-game-option">
+        <img src="bat.png" alt="Jogo do Pássaro">
+        <span>Passarinho</span>
+      </button>
+    </div>
+
+    <button type="button" id="btn-cancel-choose" class="btn-text-cancel">Cancelar</button>
+  </div>
+</section>
+
+<!-- ===================== TELA: JOGO DO PÁSSARO ===================== -->
+<section id="screen-birdgame" class="screen">
+  <div class="minigame-header">
+    <div class="mg-stat"><img class="coin-icon" src="MOEDA-cat.png" alt="moedas"> <span id="bird-coins">0</span></div>
+    <div class="mg-lives" id="bird-lives">❤️❤️❤️</div>
+  </div>
+
+  <canvas id="bird-canvas" width="480" height="720"></canvas>
+
+  <p class="mg-hint">Toque, clique ou aperte Espaço para voar. Desvie das árvores e do morcego 🦇 — se ele te morder ou você cair, perde uma vida!</p>
+</section>
+
 <!-- ===================== MODAL: MOCHILA ===================== -->
 <div id="backpack-modal" class="modal-overlay">
   <div class="card modal-card backpack-card">
@@ -147,7 +180,7 @@
     <h2 id="result-title">Muito bem!</h2>
     <p id="result-desc">Você alimentou seu gatinho.</p>
     <div class="result-stats">
-      <div><span>🍞</span><b id="result-caught">0</b></div>
+      <div id="result-primary-stat"><span id="result-primary-icon">🍞</span><b id="result-caught">0</b></div>
       <div><img class="coin-icon" src="MOEDA-cat.png" alt="moedas"><b id="result-coins">0</b></div>
     </div>
     <button id="btn-back-home" class="btn btn-primary">Voltar pra casa</button>
@@ -156,6 +189,7 @@
 
 <div id="toast" class="toast"></div>
 
+<script src="birdgame.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

@@ -8,7 +8,10 @@ Um joguinho de cuidar de um gato de estimação, feito só com HTML, CSS e JS pu
 3. Cuide dele na tela principal:
    - As barras de **fome** e **felicidade** caem sozinhas com o tempo.
    - Clique em **"Fazer carinho"** para ganhar um pouco de felicidade.
-   - Clique em **"Alimentar"** para abrir o minigame de comida.
+   - Clique em **"Alimentar"** para escolher entre dois minigames: o de
+     **comidinha caindo** ou o **Jogo do Pássaro** (estilo Flappy Bird, com
+     moedas para pegar e um morcego 🦇 para desviar). Nos dois você tem
+     3 vidas — se perder todas, a partida termina ali.
    - Clique em **"😴 Dormir"** para colocar o gatinho pra dormir — a fome e a
      felicidade caem bem mais devagar enquanto ele descansa. Clique de novo
      ("☀️ Acordar") para acordá-lo.
@@ -27,25 +30,24 @@ Um joguinho de cuidar de um gato de estimação, feito só com HTML, CSS e JS pu
 ## Estrutura dos arquivos
 ```
 gato-game/
-├── index.html          → estrutura das telas (nome, casa, mochila, minigame, resultado)
-├── css/
-│   ├── style.css        → layout, cores, mochila, modal e botões
-│   └── animations.css   → todas as animações (idle, feliz, triste, dormindo, rosinha...)
-├── js/
-│   ├── utils.js          → funções auxiliares (aleatório, toasts, trocar de tela)
-│   ├── storage.js         → salvar/carregar o progresso (localStorage)
-│   ├── sound.js           → efeitos sonoros gerados via Web Audio API
-│   ├── cat.js             → humor do gato, sono, bochechas, barras de status, partículas
-│   ├── minigame.js        → motor do minigame de comida/peixe caindo (canvas)
-│   ├── shop.js            → mochila: Mercado, Itens e a animação de dar item ao gato
-│   └── main.js            → liga tudo: telas, eventos, regras do jogo
-└── assets/
+├── index.html          → estrutura das telas (nome, casa, mochila, escolher jogo,
+│                          minigame de comida, jogo do pássaro, resultado)
+├── style.css            → todo o layout, cores, mochila, modal, botões e telas de jogo
+├── script.js             → utils, storage, sound, humor do gato, níveis, minigame de
+│                            comida, mochila/loja e a orquestração geral das telas
+├── birdgame.js            → motor isolado do Jogo do Pássaro (estilo Flappy Bird)
+└── (assets na raiz)
     ├── cat.png             → sprite do gatinho (fundo transparente)
     ├── food.png             → sprite da comida
     ├── fish.png              → peixinho bônus que cai no minigame
-    ├── backpack.png           → ícone da mochila
-    ├── potion.png              → Poção Moyai (item da loja)
-    └── cat-sleep-scene.jpg      → cena do gatinho dormindo
+    ├── tenis-cat.png          → armadilha do minigame de comida
+    ├── bat.png                 → morcego do Jogo do Pássaro
+    ├── backpack.png             → ícone da mochila
+    ├── potion.png / poção-cat.png → poções da loja
+    ├── MOEDA-cat.png             → ícone de moeda
+    ├── Boy-cat.png / Girl-cat.png → escolha de gatinho na adoção
+    ├── roupas e cenas de dormir   → fantasias compráveis na loja (rosa, mey, outono, sapo)
+    └── cat-sleep-scene.jpg        → cena do gatinho dormindo
 ```
 
 ## Personalizar
@@ -55,6 +57,10 @@ gato-game/
   `spawnInterval` em `js/minigame.js`.
 - Trocar chance de aparecer peixinho bônus: edite o `0.16` em `_spawnItem()`
   dentro de `js/minigame.js`.
+- Trocar dificuldade/velocidade do Jogo do Pássaro: edite `GRAVITY`,
+  `FLAP_STRENGTH`, `WORLD_SPEED` e `TREE_GAP` no topo de `birdgame.js`.
+- Trocar quanto o Jogo do Pássaro rende em moedas: edite o multiplicador
+  `coinsCollected * 6` dentro de `finishBirdGame()` em `script.js`.
 - Adicionar novos itens na loja: edite o array `SHOP_ITEMS` em `js/shop.js`.
 - Trocar sprites: substitua os arquivos em `assets/` por outras imagens
   (de preferência com fundo transparente / PNG).

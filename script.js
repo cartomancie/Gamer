@@ -1303,7 +1303,8 @@ function initHomeScreen(){
       Utils.showToast(`${state.name || 'Seu gatinho'} não está com fome agora! 😌`);
       return;
     }
-    startFeedMinigame();
+    Sound.click();
+    Utils.showScreen('screen-choose-game');
   });
 
   document.getElementById('btn-sleep').addEventListener('click', () => {
@@ -1379,6 +1380,7 @@ function finishFeedMinigame(result){
 
 function initResultScreen(){
   document.getElementById('btn-back-home').addEventListener('click', () => {
+    document.getElementById('result-primary-stat').style.display = '';
     goHome();
     if(state.totalFed > 0){
       Cat.playAction('eating', 1000);
@@ -1387,12 +1389,85 @@ function initResultScreen(){
   });
 }
 
+// ---------- Tela: escolher jogo ----------
+function initChooseGameScreen(){
+  document.getElementById('choose-minigame').addEventListener('click', () => {
+    Sound.click();
+    startFeedMinigame();
+  });
+  document.getElementById('choose-birdgame').addEventListener('click', () => {
+    Sound.click();
+    startBirdGame();
+  });
+  document.getElementById('btn-cancel-choose').addEventListener('click', () => {
+    goHome();
+  });
+}
+
+// ---------- Jogo do pássaro ----------
+function startBirdGame(){
+  Utils.showScreen('screen-birdgame');
+  BirdGame.start((result) => {
+    finishBirdGame(result);
+  });
+}
+
+function finishBirdGame(result){
+  const coinsCollected = result.coins || 0;
+  // Recompensa proporcional ao que foi coletado voando (o jogo do pássaro
+  // não tem tempo fixo, então a moeda por item é maior que no minigame de comida)
+  const coinsGain = coinsCollected * 6;
+  const hungerGain = Math.min(coinsCollected, 15) * 4;
+  const happyGain = coinsCollected * 2;
+
+  state.hunger = Utils.clamp(state.hunger + hungerGain, 0, 100);
+  state.happy = Utils.clamp(state.happy + happyGain, 0, 100);
+  state.coins += coinsGain;
+  if(coinsCollected > 0) state.totalFed += 1;
+  grantXP(coinsCollected * 6);
+  persist();
+
+  updateHomeUI();
+
+  document.getElementById('result-primary-stat').style.display = 'none';
+  document.getElementById('result-coins').textContent = coinsGain;
+
+  let emoji = '🎉', title = 'Muito bem!', desc = `${state.name} adorou o passeio voador!`;
+  if(coinsCollected === 0){
+    emoji = '😿'; title = 'Ih, não rolou...';
+    desc = `${state.name} continua com fome. Tente de novo!`;
+  }else if(coinsCollected < 5){
+    emoji = '🙂'; title = 'Foi alguma coisa!';
+    desc = `${state.name} ficou satisfeito com o passeio.`;
+  }else if(coinsCollected >= 15){
+    emoji = '🤩'; title = 'Voo incrível!';
+    desc = `${state.name} adorou o show no céu!`;
+  }
+  if(result.reason === 'bat'){
+    desc += ' O morcego te pegou! 🦇';
+  }
+
+  document.getElementById('result-emoji').textContent = emoji;
+  document.getElementById('result-title').textContent = title;
+  document.getElementById('result-desc').textContent = desc;
+
+  Utils.showScreen('screen-result');
+
+  if(coinsCollected > 0){
+    Sound.feedComplete();
+  }else{
+    Sound.sad();
+  }
+}
+
 // ---------- Boot ----------
 function boot(){
   Cat.init();
   Minigame.init();
+  BirdGame.init();
   initNameScreen();
   initHomeScreen();
+  initChooseGameScreen();
   initResultScreen();
   Shop.init(() => state, () => { updateHomeUI(); persist(); });
 
