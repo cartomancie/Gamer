@@ -61,7 +61,9 @@ const Storage = {
       sleeping: false,
       inventory: { potion: 0 },
       outfits: {},          // roupas já compradas, ex: { 'roupa-giy': true }
-      equippedOutfit: null  // id da roupa vestida agora (null = original)
+      equippedOutfit: null, // id da roupa vestida agora (null = original)
+      level: 1,             // nível atual do jogador
+      xp: 0                 // experiência acumulada no nível atual
     };
   },
 
@@ -97,6 +99,8 @@ const Storage = {
     state.outfits = state.outfits || {};
     state.equippedOutfit = state.equippedOutfit || null;
     state.gender = state.gender || null;
+    state.level = state.level || 1;
+    state.xp = state.xp || 0;
 
     // Migração: saves antigos guardavam a roupa rosa com o id 'roupa-giy'.
     // Continua reconhecendo quem já tinha comprado, agora com o id novo 'rosa'.
@@ -238,6 +242,41 @@ const Cat = {
     this.els.sleepBtn = document.getElementById('btn-sleep');
     this.els.sleepCard = document.getElementById('sleep-card');
     this.els.sleepImg = document.getElementById('sleep-scene-img');
+    this.els.statusBubble = document.getElementById('pet-status-bubble');
+    this.els.statusText = document.getElementById('pet-status-text');
+    this.els.levelValue = document.getElementById('level-value');
+    this.els.xpFill = document.getElementById('xp-fill');
+    this._playingUntil = 0;
+  },
+
+  // ---- Mensagem de status (substitui o nome sempre visível embaixo do gato) ----
+  // Só aparece quando alguma condição é realmente verdadeira; do contrário, some.
+  setPlaying(ms){
+    this._playingUntil = Date.now() + ms;
+  },
+
+  updateStatus(state){
+    const name = state.name || 'Seu gatinho';
+    let message = null;
+
+    if(state.sleeping){
+      message = `${name} está com sono`;
+    }else if(Date.now() < this._playingUntil){
+      message = `${name} está brincando`;
+    }else if(state.hunger < 35){
+      message = `${name} está com fome`;
+    }else if(state.happy > 70 && state.hunger > 60){
+      message = `${name} está feliz`;
+    }
+
+    if(message){
+      if(this.els.statusText.textContent !== message){
+        this.els.statusText.textContent = message;
+      }
+      this.els.statusBubble.hidden = false;
+    }else{
+      this.els.statusBubble.hidden = true;
+    }
   },
 
   moodFor(hunger, happy){
@@ -250,6 +289,8 @@ const Cat = {
 
   render(state){
     this.els.nameDisplay.textContent = state.name || 'Miau';
+    this.updateStatus(state);
+    this.renderLevel(state);
     this.els.hungerValue.textContent = Math.round(state.hunger);
     this.els.happyValue.textContent = Math.round(state.happy);
     this.els.hungerFill.style.width = state.hunger + '%';
@@ -370,6 +411,59 @@ const Cat = {
       layer.appendChild(crumb);
       setTimeout(() => crumb.remove(), 800);
     }
+  },
+
+  renderLevel(state){
+    if(!this.els.levelValue || !this.els.xpFill) return;
+    const level = state.level || 1;
+    const xp = state.xp || 0;
+    const needed = Leveling.xpNeeded(level);
+    this.els.levelValue.textContent = level;
+    const pct = level >= Leveling.MAX_LEVEL ? 100 : Utils.clamp((xp / needed) * 100, 0, 100);
+    this.els.xpFill.style.width = pct + '%';
+  }
+};
+
+// ---------- leveling.js ----------
+// Sistema de níveis: o jogador ganha XP cuidando do gatinho e sobe de nível,
+// recebendo moedas automaticamente a cada nível conquistado.
+const Leveling = {
+  MAX_LEVEL: 60,
+
+  // Quantidade de XP necessária pra sair de `level` e ir pro próximo.
+  xpNeeded(level){
+    return 100 + (level - 1) * 35;
+  },
+
+  // Recompensa em moedas por completar `level` (faixas conforme pedido).
+  coinsForLevel(level){
+    if(level <= 10) return 150;
+    if(level <= 25) return 350;
+    if(level <= 40) return 600;
+    return 999;
+  },
+
+  // Adiciona XP ao estado, sobe quantos níveis forem necessários e entrega
+  // as recompensas em moedas automaticamente. Retorna a lista de níveis ganhos.
+  addXP(state, amount){
+    if(amount <= 0 || (state.level || 1) >= this.MAX_LEVEL) return [];
+    state.level = state.level || 1;
+    state.xp = (state.xp || 0) + amount;
+
+    const levelsGained = [];
+    while(state.level < this.MAX_LEVEL && state.xp >= this.xpNeeded(state.level)){
+      state.xp -= this.xpNeeded(state.level);
+      state.level++;
+      const reward = this.coinsForLevel(state.level);
+      state.coins += reward;
+      levelsGained.push({ level: state.level, reward });
+    }
+
+    if(state.level >= this.MAX_LEVEL){
+      state.xp = 0;
+    }
+
+    return levelsGained;
   }
 };
 // ---------- minigame.js ----------
@@ -470,6 +564,17 @@ const Minigame = {
     return { w, h, offsetY };
   },
 
+  // Calcula a caixa real do pãozinho (imagem larga e baixa), igual ao que
+  // é desenhado, pra colisão/clique não ficar maior que o desenho e
+  // "vazar" em cima de outro item (ex: o tênis) que esteja por perto.
+  _foodBox(it){
+    const size = it.r * 2;
+    const w = size;
+    const h = size * 0.55;
+    const offsetY = -h / 2;
+    return { w, h, offsetY };
+  },
+
   _handleTap(e){
     if(!this.running) return;
     const rect = this.canvas.getBoundingClientRect();
@@ -484,6 +589,19 @@ const Minigame = {
         // com uma margem de folga pra facilitar o toque.
         const { w, h, offsetY } = this._fishBox(it);
         const pad = 12;
+        const left = it.x - w / 2 - pad;
+        const right = it.x + w / 2 + pad;
+        const top = it.y + offsetY - pad;
+        const bottom = it.y + offsetY + h + pad;
+        if(x >= left && x <= right && y >= top && y <= bottom){
+          this._catchItem(i);
+          return;
+        }
+      }else if(it.type === 'food'){
+        // Pãozinho: caixa retangular alinhada com o desenho real (largo e baixo),
+        // assim o clique não acerta o pão quando na verdade tocou no tênis ao lado.
+        const { w, h, offsetY } = this._foodBox(it);
+        const pad = 10;
         const left = it.x - w / 2 - pad;
         const right = it.x + w / 2 + pad;
         const top = it.y + offsetY - pad;
@@ -556,9 +674,21 @@ const Minigame = {
       type = 'food';       // pãozinho, o alimento principal
     }
     const r = (type === 'fish') ? Utils.rand(16, 20) : Utils.rand(22, 30);
+
+    // Evita que o item novo nasça em cima/muito perto de um item que acabou
+    // de aparecer, pra não ficarem sobrepostos (ex: pão "dentro" do tênis).
+    let x;
+    const minGap = r + 34;
+    for(let attempt = 0; attempt < 6; attempt++){
+      const candidate = Utils.rand(r, this.width - r);
+      const tooClose = this.items.some(other => other.y < r * 3 && Math.abs(other.x - candidate) < minGap);
+      if(!tooClose){ x = candidate; break; }
+      x = candidate;
+    }
+
     this.items.push({
       type,
-      x: Utils.rand(r, this.width - r),
+      x,
       y: -r,
       r,
       vy: Utils.rand(70, 110) + (30 - this.timeLeft) * 2,
@@ -640,7 +770,7 @@ const Minigame = {
     this.items.forEach(it => {
       ctx.save();
       ctx.translate(it.x, it.y);
-      ctx.rotate(it.type === 'fish' ? 0 : it.rot);
+      ctx.rotate(it.type === 'food' ? it.rot : 0);
       if(it.type === 'fish'){
         const img = this.fishImg;
         const { w, h, offsetY } = this._fishBox(it);
@@ -737,6 +867,15 @@ const OUTFIT_ITEMS = [
     catSprite: 'cat-used.png',               // gato acordado usando a capa
     sleepScene: 'gato-ged.png',              // gato dormindo usando a capa
     desc: 'Uma capinha fofa com capuz de raposa, cheia de folhas e bolotas.'
+  },
+  {
+    id: 'sapo',
+    name: 'Roupa de Sapo',
+    price: 380,
+    icon: 'sapo-cat.png',                    // ícone da roupa (mercado/itens)
+    catSprite: 'sapou-cat.png',              // gato acordado usando a roupa de sapo
+    sleepScene: 'sapoo-cati.png',            // gato dormindo usando a roupa de sapo
+    desc: 'Uma fantasia de sapinho fofa e divertida pro seu gatinho.'
   }
 ];
 
@@ -960,6 +1099,7 @@ const Shop = {
     const iconSrc = imgEl.src;
 
     state.inventory[itemId]--;
+    grantXP(10);
 
     // Se o gato estiver dormindo, acorda com a poção :)
     const wasSleeping = state.sleeping;
@@ -974,6 +1114,7 @@ const Shop = {
     setTimeout(() => {
       this.close();
       Cat.playAction('eating', 900);
+      Cat.setPlaying(1400);
       Sound.feedComplete();
 
       if(item.id === 'pocao-fome'){
@@ -1035,6 +1176,18 @@ function updateHomeUI(){
   document.getElementById('coins-display').textContent = state.coins;
   const modalCoins = document.getElementById('modal-coins');
   if(modalCoins) modalCoins.textContent = state.coins;
+}
+
+// Concede XP ao jogador e anuncia (com som e toast) qualquer nível ganho,
+// entregando a recompensa em moedas automaticamente.
+function grantXP(amount){
+  const levelsGained = Leveling.addXP(state, amount);
+  if(levelsGained.length > 0){
+    Sound.coin();
+    const last = levelsGained[levelsGained.length - 1];
+    const totalReward = levelsGained.reduce((sum, l) => sum + l.reward, 0);
+    Utils.showToast(`🎉 Subiu para o nível ${last.level}! +${totalReward} moedas`);
+  }
 }
 
 function startDecayLoop(){
@@ -1162,8 +1315,10 @@ function initHomeScreen(){
     if(state.sleeping) return;
     Sound.pet();
     Cat.playAction('petting', 500);
+    Cat.setPlaying(1200);
     Cat.spawnHearts(4);
     state.happy = Utils.clamp(state.happy + 3, 0, 100);
+    grantXP(5);
     updateHomeUI();
     persist();
   });
@@ -1205,6 +1360,8 @@ function finishFeedMinigame(result){
   state.happy = Utils.clamp(state.happy + happyGain, 0, 100);
   state.coins += coinsGain;
   state.totalFed += result.caught;
+  Cat.setPlaying(1500);
+  grantXP(result.caught * 8 + (result.fishCaught || 0) * 15);
   persist();
 
   updateHomeUI();

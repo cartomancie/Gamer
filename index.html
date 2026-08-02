@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Gatinho Faminto 🐱</title>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -39,15 +39,21 @@
 
 <!-- ===================== TELA: CASA DO GATO ===================== -->
 <section id="screen-home" class="screen">
+  <div class="level-row">
+    <div class="level-badge">Nv. <span id="level-value">1</span></div>
+    <div class="xp-bar-bg"><div id="xp-fill" class="xp-bar-fill"></div></div>
+  </div>
+
   <header class="topbar">
     <div class="pet-name-tag">
-      <span class="pet-name-cloud">
-        <span id="cat-name-display">Miau</span>
-        <button id="btn-rename" title="Renomear">✎</button>
-      </span>
+      <button id="btn-rename" class="rename-btn" title="Renomear">
+        ✎ <span id="cat-name-display" class="visually-hidden">Miau</span>
+      </button>
     </div>
     <div class="coins-tag"><img class="coin-icon" src="MOEDA-cat.png" alt="moedas"> <span id="coins-display">0</span></div>
   </header>
+
+  <div id="pet-status-bubble" class="pet-status-bubble" hidden><span id="pet-status-text"></span></div>
 
   <div class="stage">
     <div class="ground"></div>
