@@ -45,7 +45,7 @@ const Utils = {
 
 const STORAGE_KEY = 'gatinho-faminto-save-v1';
 
-const HUNGER_DECAY_PER_MIN = 1.4;   // quanto de fome cai por minuto real
+const HUNGER_DECAY_PER_MIN = 0.7;   // quanto de fome cai por minuto real (mais devagar)
 const HAPPY_DECAY_PER_MIN  = 0.9;   // quanto de felicidade cai por minuto real
 
 const Storage = {
@@ -242,41 +242,8 @@ const Cat = {
     this.els.sleepBtn = document.getElementById('btn-sleep');
     this.els.sleepCard = document.getElementById('sleep-card');
     this.els.sleepImg = document.getElementById('sleep-scene-img');
-    this.els.statusBubble = document.getElementById('pet-status-bubble');
-    this.els.statusText = document.getElementById('pet-status-text');
     this.els.levelValue = document.getElementById('level-value');
     this.els.xpFill = document.getElementById('xp-fill');
-    this._playingUntil = 0;
-  },
-
-  // ---- Mensagem de status (substitui o nome sempre visível embaixo do gato) ----
-  // Só aparece quando alguma condição é realmente verdadeira; do contrário, some.
-  setPlaying(ms){
-    this._playingUntil = Date.now() + ms;
-  },
-
-  updateStatus(state){
-    const name = state.name || 'Seu gatinho';
-    let message = null;
-
-    if(state.sleeping){
-      message = `${name} está com sono`;
-    }else if(Date.now() < this._playingUntil){
-      message = `${name} está brincando`;
-    }else if(state.hunger < 35){
-      message = `${name} está com fome`;
-    }else if(state.happy > 70 && state.hunger > 60){
-      message = `${name} está feliz`;
-    }
-
-    if(message){
-      if(this.els.statusText.textContent !== message){
-        this.els.statusText.textContent = message;
-      }
-      this.els.statusBubble.hidden = false;
-    }else{
-      this.els.statusBubble.hidden = true;
-    }
   },
 
   moodFor(hunger, happy){
@@ -289,7 +256,6 @@ const Cat = {
 
   render(state){
     this.els.nameDisplay.textContent = state.name || 'Miau';
-    this.updateStatus(state);
     this.renderLevel(state);
     this.els.hungerValue.textContent = Math.round(state.hunger);
     this.els.happyValue.textContent = Math.round(state.happy);
@@ -693,7 +659,7 @@ const Minigame = {
       r,
       vy: Utils.rand(70, 110) + (30 - this.timeLeft) * 2,
       rot: Utils.rand(0, Math.PI * 2),
-      vrot: Utils.rand(-1.5, 1.5)
+      vrot: type === 'tenis' ? Utils.choice([-1, 1]) * Utils.rand(1.8, 3.2) : Utils.rand(-1.5, 1.5)
     });
   },
 
@@ -770,7 +736,7 @@ const Minigame = {
     this.items.forEach(it => {
       ctx.save();
       ctx.translate(it.x, it.y);
-      ctx.rotate(it.type === 'food' ? it.rot : 0);
+      ctx.rotate(it.type === 'fish' ? 0 : it.rot);
       if(it.type === 'fish'){
         const img = this.fishImg;
         const { w, h, offsetY } = this._fishBox(it);
@@ -1093,13 +1059,20 @@ const Shop = {
     const state = this.getState();
     if(!item || (state.inventory[itemId] || 0) <= 0) return;
 
+    // A Poção Cat enche a fome — só faz sentido dar se o gatinho realmente
+    // estiver com fome. Com a fome já cheia, o gatinho não aceita.
+    if(itemId === 'pocao-fome' && state.hunger >= 100){
+      Sound.sad();
+      Utils.showToast(`${state.name || 'Seu gatinho'} não está com fome agora! 😌`);
+      return;
+    }
+
     // Guarda a posição/imagem do item AGORA, porque renderAll() vai
     // reconstruir a lista e apagar o elemento original do DOM.
     const startRect = imgEl.getBoundingClientRect();
     const iconSrc = imgEl.src;
 
     state.inventory[itemId]--;
-    grantXP(10);
 
     // Se o gato estiver dormindo, acorda com a poção :)
     const wasSleeping = state.sleeping;
@@ -1114,20 +1087,21 @@ const Shop = {
     setTimeout(() => {
       this.close();
       Cat.playAction('eating', 900);
-      Cat.setPlaying(1400);
       Sound.feedComplete();
 
       if(item.id === 'pocao-fome'){
-        // Poção Cat: enche a fome instantaneamente
+        // Poção Cat (a mais cara): enche a fome instantaneamente e vale +50 XP
         state.hunger = 100;
+        grantXP(50);
         this.onChange();
-        Utils.showToast(`${state.name || 'Seu gatinho'} encheu a pancinha na hora! 🍗✨`);
       }else{
+        // Poção Moyai (a mais barata): deixa cheiroso/rosinha e vale +30 XP
         Cat.blush(5000);
         state.happy = Utils.clamp(state.happy + 15, 0, 100);
+        grantXP(30);
         this.onChange();
-        Utils.showToast(`${state.name || 'Seu gatinho'} ficou cheiroso e rosinha! 💗`);
       }
+      Utils.showToast('Você usou uma poção! 🧪');
 
       if(wasSleeping) Utils.showToast(`${state.name || 'Seu gatinho'} acordou! ☀️`);
     }, 650);
@@ -1186,7 +1160,7 @@ function grantXP(amount){
     Sound.coin();
     const last = levelsGained[levelsGained.length - 1];
     const totalReward = levelsGained.reduce((sum, l) => sum + l.reward, 0);
-    Utils.showToast(`🎉 Subiu para o nível ${last.level}! +${totalReward} moedas`);
+    Utils.showToast(`🎉 ${state.name || 'Seu gatinho'} subiu de nível! Nível ${last.level} (+${totalReward} moedas)`);
   }
 }
 
@@ -1204,8 +1178,8 @@ function startDecayLoop(){
     updateHomeUI();
     persist();
 
-    if(state.hunger < 15 && !state.sleeping && Math.random() < 0.15){
-      Utils.showToast(`${state.name} está com muita fome... 🍞`);
+    if(state.hunger < 20 && !state.sleeping && Math.random() < 0.1){
+      Utils.showToast(`${state.name || 'Seu gatinho'} está com fome 🍞`);
     }
   }, 1000);
 }
@@ -1315,16 +1289,20 @@ function initHomeScreen(){
     if(state.sleeping) return;
     Sound.pet();
     Cat.playAction('petting', 500);
-    Cat.setPlaying(1200);
     Cat.spawnHearts(4);
     state.happy = Utils.clamp(state.happy + 3, 0, 100);
-    grantXP(5);
+    Utils.showToast('Você fez carinho! 💛');
     updateHomeUI();
     persist();
   });
 
   document.getElementById('btn-feed').addEventListener('click', () => {
     if(state.sleeping) return;
+    if(state.hunger >= 100){
+      Sound.sad();
+      Utils.showToast(`${state.name || 'Seu gatinho'} não está com fome agora! 😌`);
+      return;
+    }
     startFeedMinigame();
   });
 
@@ -1332,7 +1310,7 @@ function initHomeScreen(){
     state.sleeping = !state.sleeping;
     if(state.sleeping){
       Sound.sleep();
-      Utils.showToast(`${state.name || 'Seu gatinho'} foi dormir... 😴`);
+      Utils.showToast(`${state.name || 'Seu gatinho'} está dormindo 😴`);
     }else{
       Sound.wake();
       Utils.showToast(`${state.name || 'Seu gatinho'} acordou! ☀️`);
@@ -1360,9 +1338,12 @@ function finishFeedMinigame(result){
   state.happy = Utils.clamp(state.happy + happyGain, 0, 100);
   state.coins += coinsGain;
   state.totalFed += result.caught;
-  Cat.setPlaying(1500);
   grantXP(result.caught * 8 + (result.fishCaught || 0) * 15);
   persist();
+
+  if(result.caught > 0){
+    Utils.showToast('Você deu comida! 🍞');
+  }
 
   updateHomeUI();
   document.getElementById('result-caught').textContent = result.caught;
